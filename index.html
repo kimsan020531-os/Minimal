@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Minimo">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Minimo for iPhone</title>
+<style>
+:root{
+  --bg:#fff;--fg:#111827;--accent:#2563EB;--muted:rgba(17,24,39,.55);--line:rgba(17,24,39,.1);--card:rgba(17,24,39,.05);
+  --font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;
+  --size:20px;--pad:16px;
+  --st:env(safe-area-inset-top);--sb:env(safe-area-inset-bottom);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:var(--font);overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+button,input,select,textarea{font:inherit;color:inherit}
+input,textarea{-webkit-user-select:text;user-select:text}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;padding:calc(var(--st) + 12px) 28px calc(var(--sb) + 16px)}
+
+/* home */
+#home{touch-action:none}
+.clock{padding-top:24px;cursor:pointer}
+.clock .t{font-size:56px;font-weight:300;letter-spacing:-.02em;line-height:1}
+.clock .d{font-size:18px;color:var(--muted);margin-top:8px}
+.clock.time-only .d,.clock.date-only .t{display:none}
+.clock.date-only .d{font-size:26px;color:var(--fg)}
+.favs{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.favs.va-top{justify-content:flex-start;padding-top:40px}
+.favs.va-center{justify-content:center}
+.favs.va-bottom{justify-content:flex-end;padding-bottom:24px}
+.al-start{text-align:left;align-items:flex-start}
+.al-center{text-align:center;align-items:center}
+.al-end{text-align:right;align-items:flex-end}
+.app{display:block;background:none;border:0;padding:calc(var(--pad)/2) 0;font-size:var(--size);text-align:inherit;cursor:pointer;line-height:1.25;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app:active{opacity:.45}
+.hint{color:var(--muted);font-size:15px;line-height:1.6}
+.swipe-hint{text-align:center;color:var(--muted);font-size:12px;opacity:.6;letter-spacing:.08em}
+
+/* drawer */
+#drawer{background:var(--bg);transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);z-index:10;padding-left:0;padding-right:0}
+#drawer.open{transform:none}
+#drawer.bottom-search{flex-direction:column-reverse}
+.search{margin:0 28px 8px;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.search input{flex:1;border:0;background:none;outline:none;font-size:17px;min-width:0}
+.search .x{background:none;border:0;color:var(--muted);font-size:15px;padding:0}
+.drawer-body{flex:1;position:relative;overflow:hidden}
+.list{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 28px 40px;display:flex;flex-direction:column}
+.list.scroller-right{padding-right:48px}.list.scroller-left{padding-left:48px}
+.list>*{flex:none}
+.list .app{font-size:20px}
+.list .app.hid{opacity:.45}
+.sec{font-size:12px;color:var(--muted);padding:14px 0 2px;letter-spacing:.06em}
+.scroller{position:absolute;top:0;bottom:0;width:36px;display:flex;flex-direction:column;justify-content:center;align-items:center;touch-action:none;font-size:11px;color:var(--muted);gap:1px}
+.scroller.right{right:4px}.scroller.left{left:4px}
+.scroller span{padding:1px 6px;line-height:1.15}
+.scroller span.on{color:var(--accent);font-weight:700;transform:scale(1.5)}
+.bubble{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:64px;font-weight:600;color:var(--accent);pointer-events:none;opacity:0;transition:opacity .15s}
+.bubble.on{opacity:1}
+.empty{color:var(--muted);padding:24px 0;font-size:15px}
+
+/* sheets & dialogs */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:30;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{background:var(--bg);color:var(--fg);width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:18px 22px calc(var(--sb) + 18px);max-height:88vh;overflow-y:auto;transform:translateY(30px);transition:transform .22s}
+.scrim.on .sheet{transform:none}
+.scrim.center{align-items:center;padding:24px}
+.scrim.center .sheet{border-radius:20px}
+.sheet h3{margin:4px 0 14px;font-size:20px;font-weight:600}
+.sheet .row-btn{display:block;width:100%;text-align:left;background:none;border:0;padding:14px 2px;font-size:17px;border-bottom:1px solid var(--line)}
+.sheet .row-btn:last-child{border-bottom:0}
+.sheet .row-btn.danger{color:#dc2626}
+.field{display:block;margin-bottom:12px}
+.field span{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 12px;font-size:16px;outline:none}
+.field textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.btns{display:flex;gap:10px;margin-top:8px}
+.btn{flex:1;border:1px solid var(--line);background:none;border-radius:12px;padding:12px;font-size:16px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.big-count{font-size:64px;font-weight:300;text-align:center;margin:8px 0 4px;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:calc(var(--sb) + 28px);transform:translate(-50%,20px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.2s;z-index:50;max-width:86vw;text-align:center;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* settings */
+#settings{background:var(--bg);z-index:20;padding-left:0;padding-right:0;transform:translateX(100%);transition:transform .25s}
+#settings.open{transform:none}
+.top{display:flex;align-items:center;justify-content:space-between;padding:0 22px 10px}
+.top h2{margin:0;font-size:28px;font-weight:600}
+.top button{background:none;border:0;font-size:17px;color:var(--accent)}
+.tabs{display:flex;gap:6px;padding:0 22px 10px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{border:1px solid var(--line);background:none;border-radius:999px;padding:7px 14px;font-size:14px;white-space:nowrap}
+.tabs button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.set-body{flex:1;overflow-y:auto;padding:4px 22px 40px;-webkit-overflow-scrolling:touch}
+.group{margin:14px 0 6px;font-size:12px;color:var(--muted);letter-spacing:.06em}
+.item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}
+.item .sub{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.item select{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 8px;font-size:14px;max-width:52%}
+.item input[type=range]{width:46%;accent-color:var(--accent)}
+.tg{position:relative;width:50px;height:30px;flex:none}
+.tg input{opacity:0;position:absolute;inset:0;margin:0;z-index:1}
+.tg i{position:absolute;inset:0;border-radius:99px;background:var(--line);transition:.2s}
+.tg i:after{content:"";position:absolute;width:26px;height:26px;top:2px;left:2px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s}
+.tg input:checked+i{background:var(--accent)}
+.tg input:checked+i:after{left:22px}
+.mgr{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.mgr .nm{flex:1;min-width:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mgr .nm small{display:block;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.ic{border:1px solid var(--line);background:none;border-radius:10px;min-width:36px;height:34px;font-size:14px;padding:0 8px}
+.ic.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.cat{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:16px}
+.cat small{color:var(--muted);font-size:11px;display:block}
+.note{font-size:13px;color:var(--muted);line-height:1.6;margin:8px 0}
+.note b{color:var(--fg)}
+</style>
+</head>
+<body>
+
+<section id="home" class="screen">
+  <div id="clock" class="clock"><div class="t" id="time"></div><div class="d" id="date"></div></div>
+  <div id="favs" class="favs"></div>
+  <div class="swipe-hint" id="swipeHint">위로 쓸어 올려 전체 앱 · 길게 눌러 설정</div>
+</section>
+
+<section id="drawer" class="screen">
+  <div class="search" id="searchBox">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5;flex:none" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="앱 검색" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="go">
+    <button class="x" id="qx">지우기</button>
+  </div>
+  <div class="drawer-body">
+    <div class="list" id="list"></div>
+    <div class="scroller" id="scroller"></div>
+    <div class="bubble" id="bubble"></div>
+  </div>
+</section>
+
+<section id="settings" class="screen">
+  <div class="top"><h2>설정</h2><button id="setClose">완료</button></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="set-body" id="setBody"></div>
+</section>
+
+<div class="scrim" id="scrim"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ------------------------------------------------------------------
+   Minimo for iPhone — 원본 Minimo(Android, MIT, © Vaibhav Lakhera)의
+   동작을 iOS 웹앱으로 다시 구현한 버전. 원본 코드를 옮긴 것이 아니라
+   기능 단위로 새로 작성했다.
+------------------------------------------------------------------ */
+
+// 원본 ThemeMode.kt 프리셋 색 그대로
+const THEMES = {
+  system:{name:"시스템"},
+  light:{name:"라이트",bg:"#FFFFFF",fg:"#111827",ac:"#2563EB"},
+  dark:{name:"다크",bg:"#121212",fg:"#F3F4F6",ac:"#60A5FA"},
+  black:{name:"블랙 (OLED)",bg:"#000000",fg:"#F5F5F5",ac:"#A3A3A3"},
+  midnight:{name:"Midnight",bg:"#0F172A",fg:"#F8FAFC",ac:"#38BDF8"},
+  slate:{name:"Slate Night",bg:"#1E293B",fg:"#E2E8F0",ac:"#FBBF24"},
+  dracula:{name:"Dracula",bg:"#282A36",fg:"#F8F8F2",ac:"#BD93F9"},
+  solarized:{name:"Solarized Dark",bg:"#002B36",fg:"#EEE8D5",ac:"#2AA198"},
+  gruvL:{name:"Gruvbox Light",bg:"#FBF1C7",fg:"#3C3836",ac:"#AF3A03"},
+  gruvD:{name:"Gruvbox Dark",bg:"#282828",fg:"#EBDBB2",ac:"#FE8019"},
+  charcoal:{name:"Charcoal Gold",bg:"#1C1C1E",fg:"#F5F5F0",ac:"#F5C542"},
+  navy:{name:"Navy Amber",bg:"#14213D",fg:"#F5F7FA",ac:"#FCA311"},
+  indigo:{name:"Indigo Dusk",bg:"#312E81",fg:"#E0E7FF",ac:"#FCD34D"},
+  ocean:{name:"Ocean Deep",bg:"#0B3C5D",fg:"#F1F5F9",ac:"#FFC857"},
+  teal:{name:"Deep Teal",bg:"#0F766E",fg:"#F0FDFA",ac:"#FDE68A"},
+  forest:{name:"Forest",bg:"#14532D",fg:"#ECFDF5",ac:"#BEF264"},
+  crimson:{name:"Crimson",bg:"#7F1D1D",fg:"#FEE2E2",ac:"#FCD34D"},
+  cream:{name:"Cream Espresso",bg:"#FAF3E7",fg:"#3E2723",ac:"#B45309"}
+};
+// 원본 res/font 의 폰트 + 한글 폰트
+const FONTS = {
+  system:{name:"시스템 (SF / Apple SD 고딕)",css:""},
+  inter:{name:"Inter",g:"Inter:wght@300;400;600",css:"'Inter'"},
+  nunito:{name:"Nunito",g:"Nunito:wght@300;400;600",css:"'Nunito'"},
+  lexend:{name:"Lexend",g:"Lexend:wght@300;400;600",css:"'Lexend'"},
+  poppins:{name:"Poppins",g:"Poppins:wght@300;400;600",css:"'Poppins'"},
+  dynapuff:{name:"DynaPuff",g:"DynaPuff:wght@400;600",css:"'DynaPuff'"},
+  notoSans:{name:"Noto Sans KR",g:"Noto+Sans+KR:wght@300;400;600",css:"'Noto Sans KR'"},
+  notoSerif:{name:"Noto Serif KR",g:"Noto+Serif+KR:wght@300;400;600",css:"'Noto Serif KR'"},
+  plex:{name:"IBM Plex Sans KR",g:"IBM+Plex+Sans+KR:wght@300;400;600",css:"'IBM Plex Sans KR'"},
+  mono:{name:"모노스페이스",css:"ui-monospace,Menlo"}
+};
+
+// iOS에서 쓸 수 있는 URL 스킴 카탈로그. 앱 업데이트로 바뀔 수 있으니 '테스트'로 확인.
+const CATALOG = [
+  ["Apple 기본",[
+    ["메시지","sms:"],["메일","message://"],["지도","maps://"],["캘린더","calshow://"],
+    ["사진","photos-redirect://"],["메모","mobilenotes://"],["미리 알림","x-apple-reminderkit://"],
+    ["음악","music://"],["팟캐스트","podcasts://"],["App Store","itms-apps://"],
+    ["FaceTime","facetime://"],["파일","shareddocuments://"],["단축어","shortcuts://"],
+    ["시계 · 알람","clock-alarm://"],["Safari 검색","x-web-search://"]
+  ]],
+  ["메신저 · SNS",[
+    ["카카오톡","kakaotalk://"],["인스타그램","instagram://"],["Threads","barcelona://"],
+    ["X","twitter://"],["텔레그램","tg://"],["라인","line://"],["디스코드","discord://"],
+    ["슬랙","slack://"],["핀터레스트","pinterest://"]
+  ]],
+  ["생활 · 지도",[
+    ["네이버","naversearchapp://"],["네이버 지도","nmap://"],["카카오맵","kakaomap://"],
+    ["카카오T","kakaot://"],["티맵","tmap://"],["구글 지도","comgooglemaps://"],
+    ["토스","supertoss://"],["쿠팡","coupang://"],["배달의민족","baemin://"],["당근","towneers://"]
+  ]],
+  ["미디어 · 작업",[
+    ["유튜브","youtube://"],["넷플릭스","nflx://"],["스포티파이","spotify://"],
+    ["네이버 웹툰","naverwebtoon://"],["Gmail","googlegmail://"],["크롬","googlechrome://"],
+    ["노션","notion://"],["Figma","figma://"]
+  ]],
+  ["단축어로 여는 앱 (단축어 앱에 같은 이름으로 '앱 열기' 단축어 필요)",[
+    ["카메라","shortcuts://run-shortcut?name="+encodeURIComponent("카메라")],
+    ["전화","shortcuts://run-shortcut?name="+encodeURIComponent("전화")],
+    ["설정","shortcuts://run-shortcut?name="+encodeURIComponent("설정")],
+    ["Safari","shortcuts://run-shortcut?name="+encodeURIComponent("Safari")],
+    ["계산기","shortcuts://run-shortcut?name="+encodeURIComponent("계산기")],
+    ["날씨","shortcuts://run-shortcut?name="+encodeURIComponent("날씨")]
+  ]]
+];
+
+const DEFAULT_SETTINGS = {
+  clock:"full", h24:false, ha:"start", va:"center", ca:"start",
+  size:24, pad:16, theme:"system", font:"system", showHint:true,
+  searchMode:"contains", autoOpen:false, autoKb:true, enterFirst:true, searchBottom:false,
+  scroller:true, scrollerSide:"right", hiddenInSearch:true, sections:true,
+  swL:"", swR:"", swDown:"search", dbl:"", clockApp:"", dateApp:""
+};
+const STORE_KEY = "minimo-ios-v1";
+const uid = () => Math.random().toString(36).slice(2,9);
+const mk = (name,url) => ({id:uid(),name,url,hidden:false,delay:0});
+
+function defaultState(){
+  const apps=[mk("메시지","sms:"),mk("사진","photos-redirect://"),mk("카카오톡","kakaotalk://"),
+    mk("지도","maps://"),mk("음악","music://"),mk("캘린더","calshow://"),mk("메모","mobilenotes://"),
+    mk("유튜브","youtube://"),mk("카메라","shortcuts://run-shortcut?name="+encodeURIComponent("카메라"))];
+  const st={apps,favs:apps.slice(0,4).map(a=>a.id),s:{...DEFAULT_SETTINGS}};
+  st.s.dateApp=apps.find(a=>a.name==="캘린더").id;
+  return st;
+}
+let S;
+function load(){
+  try{const raw=localStorage.getItem(STORE_KEY);if(raw){const p=JSON.parse(raw);p.s={...DEFAULT_SETTINGS,...p.s};return p;}}catch(e){}
+  return defaultState();
+}
+function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify(S));}catch(e){}}
+S=load();
+const byId=id=>S.apps.find(a=>a.id===id);
+const $=id=>document.getElementById(id);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- 검색: 원본 StringUtils.appSearchMatcher 동작 + 한글 초성 검색 ---------- */
+const CHO="ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+const SPECIAL={"ø":"o","ł":"l","đ":"d","æ":"ae","œ":"oe","ß":"ss","ħ":"h","ŧ":"t","þ":"th","ð":"d","ŋ":"n","ŀ":"l"};
+function norm(s){
+  s=s.toLowerCase();
+  if(/^[\x00-\x7f]*$/.test(s))return s;
+  // 악센트 제거 후 NFC로 재조합해 한글 음절은 다시 온전한 글자로 비교 (원본과 동일한 접근)
+  s=s.normalize("NFD").replace(/[̀-ͯ]/g,"").normalize("NFC");
+  return [...s].map(c=>SPECIAL[c]??c).join("");
+}
+function chosung(s){
+  let o="";for(const c of s){const k=c.charCodeAt(0)-0xAC00;o+=(k>=0&&k<11172)?CHO[Math.floor(k/588)]:c;}return o;
+}
+function matcher(q,mode){
+  q=norm(q.trim());if(!q)return()=>false;
+  const onlyJamo=/^[ㄱ-ㅎ\s]+$/.test(q);
+  return name=>{
+    const n=norm(name);
+    const hay=onlyJamo?chosung(n):n;
+    const qq=q.replace(/\s+/g,onlyJamo?"":" ");
+    const h=onlyJamo?hay.replace(/\s+/g,""):hay;
+    return mode==="starts"?h.startsWith(qq):h.includes(qq);
+  };
+}
+function indexLetter(name){
+  const c=name.trim()[0]||"#";const k=c.charCodeAt(0)-0xAC00;
+  if(k>=0&&k<11172){const ch=CHO[Math.floor(k/588)];return {"ㄲ":"ㄱ","ㄸ":"ㄷ","ㅃ":"ㅂ","ㅆ":"ㅅ","ㅉ":"ㅈ"}[ch]||ch;}
+  if(/[ㄱ-ㅎ]/.test(c))return c;
+  if(/[a-z]/i.test(c))return c.toUpperCase();
+  return "#";
+}
+const collator=new Intl.Collator("ko",{sensitivity:"base",numeric:true});
+
+/* ---------- 테마 · 폰트 ---------- */
+const mq=matchMedia("(prefers-color-scheme: dark)");
+function hexA(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`;}
+function applyTheme(){
+  let t=THEMES[S.s.theme]||THEMES.system;
+  if(S.s.theme==="system")t=mq.matches?THEMES.dark:THEMES.light;
+  const r=document.documentElement.style;
+  r.setProperty("--bg",t.bg);r.setProperty("--fg",t.fg);r.setProperty("--accent",t.ac);
+  r.setProperty("--muted",hexA(t.fg,.55));r.setProperty("--line",hexA(t.fg,.12));r.setProperty("--card",hexA(t.fg,.05));
+  document.querySelector('meta[name=theme-color]').content=t.bg;
+  const f=FONTS[S.s.font]||FONTS.system;
+  if(f.g&&!document.getElementById("gf-"+S.s.font)){
+    const l=document.createElement("link");l.id="gf-"+S.s.font;l.rel="stylesheet";
+    l.href=`https://fonts.googleapis.com/css2?family=${f.g}&display=swap`;document.head.appendChild(l);
+  }
+  r.setProperty("--font",(f.css?f.css+",":"")+'-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif');
+  r.setProperty("--size",S.s.size+"px");r.setProperty("--pad",S.s.pad+"px");
+}
+mq.addEventListener?.("change",applyTheme);
+
+/* ---------- 홈 ---------- */
+function renderClock(){
+  const now=new Date();
+  const time=now.toLocaleTimeString("ko-KR",{hour:"numeric",minute:"2-digit",hour12:!S.s.h24});
+  $("time").textContent=time;
+  $("date").textContent=now.toLocaleDateString("ko-KR",{month:"long",day:"numeric",weekday:"long"});
+}
+function renderHome(){
+  const c=$("clock");
+  c.style.display=S.s.clock==="off"?"none":"";
+  c.className="clock al-"+S.s.ca+(S.s.clock==="time"?" time-only":S.s.clock==="date"?" date-only":"");
+  const f=$("favs");f.className="favs va-"+S.s.va+" al-"+S.s.ha;
+  const favs=S.favs.map(byId).filter(Boolean);
+  f.innerHTML=favs.length?favs.map(a=>`<button class="app" data-id="${a.id}">${esc(a.name)}</button>`).join("")
+    :`<div class="hint">홈이 비어 있어요.<br>길게 눌러 설정 → 앱에서 즐겨찾기를 고르세요.</div>`;
+  $("swipeHint").style.display=S.s.showHint?"":"none";
+  renderClock();
+}
+setInterval(renderClock,10000);
+
+/* ---------- 실행 (원본 launchDelaySeconds 확인창 포함) ---------- */
+let openedAt=0;
+function openUrl(url){
+  if(!url)return;
+  openedAt=Date.now();
+  if(/^https?:/i.test(url)){ // 웹 바로가기 → Safari
+    const w=window.open(url,"_blank");if(!w)location.href=url;
+  }else{
+    location.href=url;
+  }
+  setTimeout(()=>{if(!document.hidden&&Date.now()-openedAt<2500)toast("앱이 열리지 않았어요. 설치 여부나 URL을 확인하세요.");},1600);
+}
+function launch(app){
+  if(!app)return;
+  if(app.delay>0)return delayDialog(app);
+  closeDrawer(true);openUrl(app.url);
+}
+document.addEventListener("visibilitychange",()=>{if(document.hidden)openedAt=0;else{closeDrawer(true);renderClock();}});
+
+function delayDialog(app){
+  const end=Date.now()+app.delay*1000;let timer;
+  sheet(`<h3>${esc(app.name)}</h3>
+    <div class="note">정말 열어야 하나요? 잠깐 숨 고르기.</div>
+    <div class="big-count" id="cd">${app.delay}</div>
+    <div class="btns"><button class="btn" data-a="cancel">닫기</button><button class="btn primary" data-a="go" id="goBtn" disabled style="opacity:.4">열기</button></div>`,
+    {center:true,onClose:()=>clearInterval(timer),actions:{cancel:closeSheet,go:()=>{closeSheet();closeDrawer(true);openUrl(app.url);}}});
+  timer=setInterval(()=>{
+    const left=Math.max(0,Math.ceil((end-Date.now())/1000));
+    const el=$("cd");if(el)el.textContent=left;
+    if(left===0){clearInterval(timer);const b=$("goBtn");if(b){b.disabled=false;b.style.opacity=1;}}
+  },200);
+}
+
+/* ---------- 앱 서랍 ---------- */
+let drawerOpen=false;
+function openDrawer(focus){
+  drawerOpen=true;$("q").value="";renderList();
+  const d=$("drawer");d.classList.toggle("bottom-search",S.s.searchBottom);d.classList.add("open");
+  $("list").scrollTop=0;
+  if(focus??S.s.autoKb)$("q").focus({preventScroll:true}); // 제스처 핸들러 안에서 호출해야 iOS 키보드가 뜸
+}
+function closeDrawer(instant){
+  if(!drawerOpen)return;drawerOpen=false;$("q").blur();
+  const d=$("drawer");
+  if(instant){d.style.transition="none";d.classList.remove("open");d.offsetHeight;d.style.transition="";}
+  else d.classList.remove("open");
+}
+function visibleApps(){
+  const q=$("q").value;
+  if(q.trim()){
+    const m=matcher(q,S.s.searchMode);
+    return S.apps.filter(a=>(S.s.hiddenInSearch||!a.hidden)&&m(a.name));
+  }
+  return S.apps.filter(a=>!a.hidden);
+}
+function renderList(){
+  const q=$("q").value.trim();
+  const apps=visibleApps().sort((a,b)=>collator.compare(a.name,b.name));
+  const list=$("list"),sc=$("scroller");
+  const useScroller=S.s.scroller&&!q&&apps.length>8;
+  list.className="list al-"+S.s.ha+(useScroller?" scroller-"+S.s.scrollerSide:"");
+  sc.className="scroller "+S.s.scrollerSide;sc.style.display=useScroller?"":"none";
+  if(!apps.length){list.innerHTML=`<div class="empty">${q?"일치하는 앱이 없어요":"앱이 없어요. 설정에서 추가하세요."}</div>`;sc.innerHTML="";return;}
+  let html="",last=null;const letters=[];
+  for(const a of apps){
+    const L=indexLetter(a.name);
+    if(L!==last){letters.push(L);last=L;if(S.s.sections&&!q)html+=`<div class="sec" data-sec="${esc(L)}">${esc(L)}</div>`;else html+=`<i data-sec="${esc(L)}"></i>`;}
+    html+=`<button class="app${a.hidden?" hid":""}" data-id="${a.id}">${esc(a.name)}</button>`;
+  }
+  list.innerHTML=html;
+  sc.innerHTML=letters.map(l=>`<span data-l="${esc(l)}">${esc(l)}</span>`).join("");
+}
+$("q").addEventListener("input",()=>{
+  renderList();
+  if(S.s.autoOpen&&$("q").value.trim()){const v=visibleApps();if(v.length===1)launch(v[0]);}
+});
+$("q").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();if(S.s.enterFirst){const b=$("list").querySelector(".app");if(b)launch(byId(b.dataset.id));}else $("q").blur();}
+});
+$("qx").onclick=()=>{$("q").value="";renderList();$("q").focus();};
+$("list").addEventListener("scroll",()=>{if($("list").scrollTop>10)$("q").blur();},{passive:true});
+
+// 빠른 스크롤러 (원본 AppDrawerFastScroller의 동작: 드래그하며 해당 글자로 이동)
+(function(){
+  const sc=$("scroller"),bub=$("bubble");let cur=null;
+  function pick(y){
+    const spans=[...sc.children];if(!spans.length)return;
+    const r=sc.getBoundingClientRect();
+    const first=spans[0].getBoundingClientRect(),lastR=spans[spans.length-1].getBoundingClientRect();
+    const t=(y-first.top)/(lastR.bottom-first.top);
+    const i=Math.min(spans.length-1,Math.max(0,Math.floor(t*spans.length)));
+    const L=spans[i].dataset.l;if(L===cur)return;cur=L;
+    spans.forEach(s=>s.classList.toggle("on",s.dataset.l===L));
+    bub.textContent=L;bub.classList.add("on");
+    const target=$("list").querySelector(`[data-sec="${CSS.escape(L)}"]`);
+    if(target)$("list").scrollTop=target.offsetTop-6;
+    navigator.vibrate?.(5);
+  }
+  function end(){cur=null;bub.classList.remove("on");[...sc.children].forEach(s=>s.classList.remove("on"));}
+  sc.addEventListener("touchstart",e=>{e.preventDefault();$("q").blur();pick(e.touches[0].clientY);},{passive:false});
+  sc.addEventListener("touchmove",e=>{e.preventDefault();pick(e.touches[0].clientY);},{passive:false});
+  sc.addEventListener("touchend",end);sc.addEventListener("touchcancel",end);
+  sc.addEventListener("mousedown",e=>{pick(e.clientY);const mv=ev=>pick(ev.clientY);const up=()=>{end();removeEventListener("mousemove",mv);removeEventListener("mouseup",up);};addEventListener("mousemove",mv);addEventListener("mouseup",up);});
+})();
+
+/* ---------- 탭 · 길게 누르기 (앱 목록 공통) ---------- */
+function bindPress(container,onTap,onLong){
+  let timer,sx,sy,target,long=false;
+  container.addEventListener("pointerdown",e=>{
+    const b=e.target.closest(".app");if(!b)return;
+    target=b;sx=e.clientX;sy=e.clientY;long=false;
+    timer=setTimeout(()=>{long=true;navigator.vibrate?.(10);onLong(byId(b.dataset.id));},520);
+  });
+  container.addEventListener("pointermove",e=>{if(target&&(Math.abs(e.clientX-sx)>8||Math.abs(e.clientY-sy)>8)){clearTimeout(timer);target=null;}});
+  container.addEventListener("pointerup",e=>{clearTimeout(timer);if(target&&!long)onTap(byId(target.dataset.id));target=null;});
+  container.addEventListener("pointercancel",()=>{clearTimeout(timer);target=null;});
+  container.addEventListener("contextmenu",e=>e.preventDefault());
+}
+bindPress($("favs"),launch,appMenu);
+bindPress($("list"),launch,appMenu);
+
+function appMenu(app){
+  if(!app)return;
+  const fav=S.favs.includes(app.id);
+  sheet(`<h3>${esc(app.name)}</h3>
+    <button class="row-btn" data-a="fav">${fav?"홈에서 빼기":"홈에 추가"}</button>
+    <button class="row-btn" data-a="rename">이름 바꾸기</button>
+    <button class="row-btn" data-a="delay">실행 지연${app.delay?` (${app.delay}초)`:""}</button>
+    <button class="row-btn" data-a="hide">${app.hidden?"숨기기 해제":"숨기기"}</button>
+    <button class="row-btn" data-a="edit">URL 편집</button>
+    <button class="row-btn danger" data-a="del">목록에서 삭제</button>`,{actions:{
+      fav:()=>{toggleFav(app.id);closeSheet();},
+      rename:()=>editApp(app,"rename"),
+      delay:()=>delayEdit(app),
+      hide:()=>{app.hidden=!app.hidden;if(app.hidden)S.favs=S.favs.filter(i=>i!==app.id);commit();closeSheet();},
+      edit:()=>editApp(app),
+      del:()=>confirmSheet(`'${app.name}'을(를) 목록에서 지울까요?`,"삭제",()=>{removeApp(app.id);})
+    }});
+}
+function toggleFav(id){S.favs.includes(id)?S.favs=S.favs.filter(i=>i!==id):S.favs.push(id);commit();}
+function removeApp(id){S.apps=S.apps.filter(a=>a.id!==id);S.favs=S.favs.filter(i=>i!==id);
+  for(const k of ["swL","swR","dbl","clockApp","dateApp"])if(S.s[k]===id)S.s[k]="";commit();}
+function delayEdit(app){
+  sheet(`<h3>실행 지연</h3><div class="note">앱을 열기 전에 기다릴 시간이에요. 습관적으로 여는 앱에 걸어두면 한 번 더 생각하게 됩니다. 0이면 끔.</div>
+    <label class="field"><span>초</span><input id="dl" type="number" inputmode="numeric" min="0" max="999" value="${app.delay||""}"></label>
+    <div class="btns"><button class="btn" data-a="c">취소</button><button class="btn primary" data-a="s">저장</button></div>`,
+    {center:true,actions:{c:closeSheet,s:()=>{app.delay=Math.max(0,Math.min(999,parseInt($("dl").value||"0",10)||0));commit();closeSheet();}}});
+  setTimeout(()=>$("dl")?.focus(),50);
+}
+function editApp(app,mode){
+  const isNew=!app;app=app||{name:"",url:""};
+  sheet(`<h3>${isNew?"앱 직접 추가":mode==="rename"?"이름 바꾸기":"앱 편집"}</h3>
+    <label class="field"><span>표시 이름</span><input id="en" value="${esc(app.name)}"></label>
+    ${mode==="rename"?"":`
+    <label class="field"><span>열 주소 (URL 스킴 또는 https://)</span><input id="eu" value="${esc(app.url)}" placeholder="예: kakaotalk://  또는  https://..." autocapitalize="off" autocorrect="off"></label>
+    <label class="field"><span>또는 단축어 이름으로 열기</span><input id="es" placeholder="단축어 앱에 만든 단축어 이름" autocapitalize="off"></label>
+    <div class="note">URL 스킴이 없는 앱(카메라, 설정 등)은 단축어 앱에서 <b>'앱 열기'</b> 동작 하나짜리 단축어를 만들고 그 이름을 적으면 됩니다.</div>`}
+    <div class="btns">${mode==="rename"?"":`<button class="btn" data-a="t">테스트</button>`}<button class="btn" data-a="c">취소</button><button class="btn primary" data-a="s">저장</button></div>`,
+    {center:true,actions:{
+      c:closeSheet,
+      t:()=>openUrl(readUrl()),
+      s:()=>{
+        const name=$("en").value.trim();if(!name)return toast("이름을 입력하세요");
+        if(mode==="rename"){app.name=name;}
+        else{const url=readUrl();if(!url)return toast("URL이나 단축어 이름을 입력하세요");
+          if(isNew)S.apps.push(mk(name,url));else{app.name=name;app.url=url;}}
+        commit();closeSheet();
+      }}});
+  function readUrl(){const s=$("es")?.value.trim();return s?"shortcuts://run-shortcut?name="+encodeURIComponent(s):($("eu")?.value.trim()||"");}
+}
+
+/* ---------- 제스처 (원본 HomeScreen: 위=서랍, 좌우=지정 앱, 길게=설정, 더블탭) ---------- */
+(function(){
+  const home=$("home");let sx,sy,st,lpTimer,moved,lastTap=0,tapTimer,onApp;
+  home.addEventListener("touchstart",e=>{
+    const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();moved=false;
+    onApp=!!e.target.closest(".app,.clock");
+    if(!onApp)lpTimer=setTimeout(()=>{moved=true;navigator.vibrate?.(10);openSettings();},600);
+  },{passive:true});
+  home.addEventListener("touchmove",e=>{
+    const t=e.touches[0];if(Math.abs(t.clientX-sx)>10||Math.abs(t.clientY-sy)>10){moved=true;clearTimeout(lpTimer);}
+  },{passive:true});
+  home.addEventListener("touchend",e=>{
+    clearTimeout(lpTimer);
+    const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy,dt=Math.max(1,Date.now()-st);
+    const W=innerWidth,H=innerHeight;
+    if(Math.abs(dy)>Math.abs(dx)){
+      const fling=Math.abs(dy)/dt>0.5;
+      if(dy<-H*0.12||(fling&&dy<-40)){openDrawer();return;}
+      if(dy>H*0.12||(fling&&dy>40)){
+        if(S.s.swDown==="search")openDrawer(true);else if(S.s.swDown)launch(byId(S.s.swDown));return;}
+    }else{
+      if(dx>W*0.15&&S.s.swR){launch(byId(S.s.swR));return;}
+      if(dx<-W*0.15&&S.s.swL){launch(byId(S.s.swL));return;}
+    }
+    if(!moved&&!onApp&&S.s.dbl){
+      const now=Date.now();
+      if(now-lastTap<300){lastTap=0;launch(byId(S.s.dbl));}else lastTap=now;
+    }
+  });
+  // 마우스(미리보기용)
+  let md=null;
+  home.addEventListener("mousedown",e=>{md={x:e.clientX,y:e.clientY,t:Date.now(),onApp:!!e.target.closest(".app,.clock")};
+    if(!md.onApp)lpTimer=setTimeout(()=>{md=null;openSettings();},600);});
+  home.addEventListener("mouseup",e=>{clearTimeout(lpTimer);if(!md)return;const dy=e.clientY-md.y,dx=e.clientX-md.x;
+    if(dy<-60&&Math.abs(dy)>Math.abs(dx))openDrawer();else if(dx>80&&S.s.swR)launch(byId(S.s.swR));else if(dx<-80&&S.s.swL)launch(byId(S.s.swL));md=null;});
+  home.addEventListener("wheel",e=>{if(e.deltaY>30)openDrawer();},{passive:true});
+
+  $("clock").addEventListener("click",e=>{
+    const onDate=e.target.id==="date";const id=onDate?S.s.dateApp:S.s.clockApp;if(id)launch(byId(id));
+  });
+
+  // 서랍: 맨 위에서 아래로 끌면 닫기 (원본 dragDownCloseThreshold = 높이 15%)
+  const d=$("drawer");let dy0,dt0,atTop;
+  d.addEventListener("touchstart",e=>{if(e.target.closest(".scroller"))return dy0=null;dy0=e.touches[0].clientY;dt0=Date.now();atTop=$("list").scrollTop<=0;},{passive:true});
+  d.addEventListener("touchend",e=>{if(dy0==null)return;const dy=e.changedTouches[0].clientY-dy0;
+    if(atTop&&(dy>innerHeight*0.15||(dy>50&&dy/(Date.now()-dt0)>0.6)))closeDrawer();});
+  d.addEventListener("wheel",e=>{if(e.deltaY<-40&&$("list").scrollTop<=0)closeDrawer();},{passive:true});
+  addEventListener("keydown",e=>{if(e.key==="Escape"){if($("scrim").classList.contains("on"))closeSheet();else if(drawerOpen)closeDrawer();else closeSettings();}});
+})();
+
+/* ---------- 시트 / 토스트 ---------- */
+let sheetOpts={};
+function sheet(html,opts={}){
+  sheetOpts=opts;const sc=$("scrim");sc.classList.toggle("center",!!opts.center);
+  $("sheet").innerHTML=html;sc.classList.add("on");
+}
+function closeSheet(){sheetOpts.onClose?.();sheetOpts={};$("scrim").classList.remove("on");}
+$("scrim").addEventListener("click",e=>{
+  if(e.target===$("scrim"))return closeSheet();
+  const a=e.target.closest("[data-a]");if(a&&sheetOpts.actions?.[a.dataset.a])sheetOpts.actions[a.dataset.a]();
+});
+function confirmSheet(msg,ok,fn){
+  sheet(`<h3>${esc(msg)}</h3><div class="btns"><button class="btn" data-a="n">취소</button><button class="btn primary" data-a="y">${esc(ok)}</button></div>`,
+    {center:true,actions:{n:closeSheet,y:()=>{fn();closeSheet();}}});
+}
+let toastT;
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),2600);}
+
+/* ---------- 설정 ---------- */
+const TABS=[["apps","앱"],["add","앱 추가"],["home","홈 화면"],["gesture","제스처"],["drawer","앱 서랍"],["look","테마"],["backup","백업"],["help","안내"]];
+let tab="apps";
+function openSettings(){closeDrawer(true);$("settings").classList.add("open");renderSettings();}
+function closeSettings(){$("settings").classList.remove("open");}
+$("setClose").onclick=closeSettings;
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b){tab=b.dataset.t;renderSettings();$("setBody").scrollTop=0;}});
+
+function commit(){save();applyTheme();renderHome();if(drawerOpen)renderList();if($("settings").classList.contains("open"))renderSettings();}
+
+const tg=(k,label,sub="")=>`<label class="item"><span>${label}${sub?`<span class="sub">${sub}</span>`:""}</span><span class="tg"><input type="checkbox" data-k="${k}" ${S.s[k]?"checked":""}><i></i></span></label>`;
+const sel=(k,label,opts,sub="")=>`<div class="item"><span>${label}${sub?`<span class="sub">${sub}</span>`:""}</span><select data-k="${k}">${opts.map(([v,n])=>`<option value="${esc(v)}" ${String(S.s[k])===String(v)?"selected":""}>${esc(n)}</option>`).join("")}</select></div>`;
+const rng=(k,label,min,max)=>`<div class="item"><span>${label} <span class="sub" id="rv-${k}">${S.s[k]}</span></span><input type="range" data-k="${k}" min="${min}" max="${max}" value="${S.s[k]}"></div>`;
+const appOpts=(none="없음")=>[["",none],...[...S.apps].sort((a,b)=>collator.compare(a.name,b.name)).map(a=>[a.id,a.name])];
+
+function renderSettings(){
+  $("tabs").innerHTML=TABS.map(([t,n])=>`<button data-t="${t}" class="${t===tab?"on":""}">${n}</button>`).join("");
+  let h="";
+  if(tab==="apps"){
+    const favs=S.favs.map(byId).filter(Boolean);
+    const rest=S.apps.filter(a=>!S.favs.includes(a.id)).sort((a,b)=>collator.compare(a.name,b.name));
+    h+=`<div class="group">홈 즐겨찾기 · 순서</div>`;
+    h+=favs.length?favs.map((a,i)=>`<div class="mgr"><div class="nm">${esc(a.name)}</div>
+      <button class="ic" data-m="up" data-id="${a.id}" ${i?"":"disabled"}>↑</button><button class="ic" data-m="down" data-id="${a.id}" ${i<favs.length-1?"":"disabled"}>↓</button>
+      <button class="ic on" data-m="fav" data-id="${a.id}">★</button><button class="ic" data-m="menu" data-id="${a.id}">⋯</button></div>`).join("")
+      :`<div class="note">아직 없어요. 아래에서 ☆를 눌러 추가하세요.</div>`;
+    h+=`<div class="group">전체 앱 (${S.apps.length})</div>`;
+    h+=rest.map(a=>`<div class="mgr"><div class="nm">${esc(a.name)}${a.hidden?" · 숨김":""}${a.delay?` · ${a.delay}초`:""}<small>${esc(a.url)}</small></div>
+      <button class="ic" data-m="fav" data-id="${a.id}">☆</button><button class="ic" data-m="menu" data-id="${a.id}">⋯</button></div>`).join("");
+    h+=`<div class="btns" style="margin-top:16px"><button class="btn primary" data-m="addTab">+ 앱 추가</button></div>`;
+  }
+  if(tab==="add"){
+    const have=new Set(S.apps.map(a=>a.url));
+    h+=`<div class="note">탭하면 목록에 추가돼요. 설치되지 않은 앱은 열리지 않습니다. 추가 후 ⋯ → URL 편집 → <b>테스트</b>로 확인하세요.</div>`;
+    h+=`<div class="btns"><button class="btn" data-m="custom">직접 추가 (URL · 단축어 · 웹사이트)</button></div>`;
+    for(const [g,items] of CATALOG){
+      h+=`<div class="group">${esc(g)}</div>`;
+      h+=items.map(([n,u])=>`<div class="cat"><span>${esc(n)}<small>${esc(decodeURIComponent(u))}</small></span>${have.has(u)?`<span class="sub" style="color:var(--muted);font-size:13px">추가됨</span>`:`<button class="ic" data-m="cat" data-n="${esc(n)}" data-u="${esc(u)}">+ 추가</button>`}</div>`).join("");
+    }
+  }
+  if(tab==="home"){
+    h+=`<div class="group">시계</div>`;
+    h+=sel("clock","시계 표시",[["full","시간 + 날짜"],["time","시간만"],["date","날짜만"],["off","끄기"]]);
+    h+=tg("h24","24시간 형식");
+    h+=sel("ca","시계 정렬",[["start","왼쪽"],["center","가운데"],["end","오른쪽"]]);
+    h+=sel("clockApp","시간 탭하면 열 앱",appOpts());
+    h+=sel("dateApp","날짜 탭하면 열 앱",appOpts());
+    h+=`<div class="group">앱 목록</div>`;
+    h+=sel("ha","가로 정렬",[["start","왼쪽"],["center","가운데"],["end","오른쪽"]]);
+    h+=sel("va","세로 위치",[["top","위"],["center","가운데"],["bottom","아래 (한 손 사용)"]]);
+    h+=rng("size","글자 크기",16,40);
+    h+=rng("pad","줄 간격",0,40);
+    h+=tg("showHint","하단 안내 문구 표시");
+  }
+  if(tab==="gesture"){
+    h+=`<div class="note">위로 쓸기 = 전체 앱, 빈 곳 길게 누르기 = 설정은 고정입니다.</div>`;
+    h+=sel("swDown","아래로 쓸기",[["search","검색 바로 열기"],...appOpts("없음").slice(1),["","없음"]]);
+    h+=sel("swR","오른쪽으로 쓸기",appOpts());
+    h+=sel("swL","왼쪽으로 쓸기",appOpts());
+    h+=sel("dbl","빈 곳 두 번 탭",appOpts(),"원본의 '두 번 탭해 잠그기'는 iOS에서 불가능해 앱 실행으로 대체");
+  }
+  if(tab==="drawer"){
+    h+=sel("searchMode","검색 방식",[["contains","포함"],["starts","~로 시작"]],"초성 검색도 됩니다 (예: ㅋㅋㅇ → 카카오톡)");
+    h+=tg("autoKb","서랍 열면 키보드 자동으로");
+    h+=tg("autoOpen","결과가 하나면 바로 열기");
+    h+=tg("enterFirst","키보드 '이동'으로 첫 결과 열기");
+    h+=tg("searchBottom","검색창을 아래에");
+    h+=tg("hiddenInSearch","숨긴 앱도 검색 결과에 표시");
+    h+=tg("sections","글자 구분 머리말 표시");
+    h+=tg("scroller","빠른 스크롤러 (A–Z · ㄱ–ㅎ)");
+    h+=sel("scrollerSide","스크롤러 위치",[["right","오른쪽"],["left","왼쪽"]]);
+  }
+  if(tab==="look"){
+    h+=sel("theme","테마",Object.entries(THEMES).map(([k,v])=>[k,v.name]));
+    h+=sel("font","글꼴",Object.entries(FONTS).map(([k,v])=>[k,v.name]),"시스템 외 글꼴은 처음 한 번 인터넷 연결 필요");
+    h+=`<div class="note">배경화면을 쓰고 싶다면 iPhone 설정에서 홈 화면 배경을 단색으로 맞추고 같은 테마 색을 고르면 이음새 없이 보입니다.</div>`;
+  }
+  if(tab==="backup"){
+    h+=`<div class="note">설정과 앱 목록을 텍스트로 내보내고 가져옵니다. <b>Safari에서 연 것과 홈 화면 앱은 저장 공간이 따로</b>이니, 옮길 때 이걸 쓰세요.</div>`;
+    h+=`<label class="field"><span>내보내기</span><textarea id="exp" readonly>${esc(JSON.stringify(S))}</textarea></label>`;
+    h+=`<div class="btns"><button class="btn" data-m="copy">복사</button></div>`;
+    h+=`<label class="field" style="margin-top:18px"><span>가져오기 (붙여넣기)</span><textarea id="imp" placeholder='{"apps":[...]}'></textarea></label>`;
+    h+=`<div class="btns"><button class="btn primary" data-m="import">가져오기</button></div>`;
+    h+=`<div class="btns" style="margin-top:28px"><button class="btn" data-m="reset" style="color:#dc2626">처음 상태로 초기화</button></div>`;
+  }
+  if(tab==="help"){
+    h+=`<div class="note"><b>설치</b><br>Safari로 이 페이지 열기 → 공유 버튼 → <b>홈 화면에 추가</b>. 홈 화면 아이콘으로 열면 주소창 없는 전체화면 앱이 됩니다.</div>
+    <div class="note"><b>미니멀 홈 만들기</b><br>① 다른 앱 아이콘을 길게 눌러 '홈 화면에서 제거'(앱은 앱 보관함에 남음) ② Minimo만 독에 두거나 첫 페이지에 혼자 두기 ③ 홈 화면 편집 → 하단 페이지 점 → 나머지 페이지 숨기기.</div>
+    <div class="note"><b>조작</b><br>위로 쓸기: 전체 앱 · 아래로 쓸기: 검색 · 좌우: 지정 앱 · 빈 곳 길게: 설정 · 앱 길게: 이름 바꾸기/숨기기/실행 지연</div>
+    <div class="note"><b>iOS라서 안 되는 것</b><br>설치된 앱 자동 목록, 시스템 홈 대체, 화면 잠금, 알림 점, 스크린타임, 배터리 표시, 앱 아이콘은 iOS가 웹앱에 허용하지 않아 뺐습니다. 앱은 URL 스킴이나 단축어로 직접 등록합니다.</div>
+    <div class="note">원작: Minimo Launcher (Android) · MIT License · © Vaibhav Lakhera. 이 버전은 iOS용으로 새로 작성한 비공식 포팅입니다.</div>`;
+  }
+  $("setBody").innerHTML=h;
+}
+$("setBody").addEventListener("change",e=>{
+  const k=e.target.dataset.k;if(!k)return;
+  S.s[k]=e.target.type==="checkbox"?e.target.checked:e.target.type==="range"?+e.target.value:e.target.value;commit();
+});
+$("setBody").addEventListener("input",e=>{
+  const k=e.target.dataset.k;if(!k||e.target.type!=="range")return;
+  S.s[k]=+e.target.value;$("rv-"+k).textContent=S.s[k];save();applyTheme();renderHome();
+});
+$("setBody").addEventListener("click",e=>{
+  const b=e.target.closest("[data-m]");if(!b)return;const m=b.dataset.m,id=b.dataset.id;
+  if(m==="fav")toggleFav(id);
+  if(m==="menu")appMenu(byId(id));
+  if(m==="up"||m==="down"){const i=S.favs.indexOf(id),j=m==="up"?i-1:i+1;if(j>=0&&j<S.favs.length){[S.favs[i],S.favs[j]]=[S.favs[j],S.favs[i]];commit();}}
+  if(m==="addTab"){tab="add";renderSettings();$("setBody").scrollTop=0;}
+  if(m==="custom")editApp(null);
+  if(m==="cat"){S.apps.push(mk(b.dataset.n,b.dataset.u));commit();toast(`'${b.dataset.n}' 추가됨`);}
+  if(m==="copy"){navigator.clipboard?.writeText($("exp").value).then(()=>toast("복사했어요"),()=>{$("exp").select();toast("텍스트를 길게 눌러 복사하세요");});}
+  if(m==="import"){
+    try{const p=JSON.parse($("imp").value);if(!Array.isArray(p.apps))throw 0;
+      S={apps:p.apps,favs:(p.favs||[]).filter(i=>p.apps.some(a=>a.id===i)),s:{...DEFAULT_SETTINGS,...p.s}};commit();toast("가져왔어요");}
+    catch(_){toast("형식이 올바르지 않아요");}
+  }
+  if(m==="reset")confirmSheet("모든 설정과 앱 목록을 초기화할까요?","초기화",()=>{S=defaultState();commit();});
+});
+
+/* ---------- 시작 ---------- */
+applyTheme();renderHome();
+// iOS 홈 화면 앱에서 고무줄 스크롤 막기
+document.addEventListener("touchmove",e=>{if(!e.target.closest(".list,.set-body,.sheet,.tabs,textarea"))e.preventDefault();},{passive:false});
+</script>
+</body>
+</html>
